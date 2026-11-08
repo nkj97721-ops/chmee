@@ -1,4 +1,4 @@
-package com.nkj97721.chmee.v20261108213748
+package com.nkj97721.chmee.v20261108214040
 
 import android.Manifest
 import android.content.ContentUris
@@ -72,7 +72,7 @@ private fun MediaManager() {
     var media by remember { mutableStateOf(emptyList<MediaItem>()) }
     var refreshKey by remember { mutableIntStateOf(0) }
     var activeTab by remember { mutableStateOf("全部") }
-    var tags by remember { mutableStateOf(prefs.getStringSet("custom_tags", setOf())?.toList()?.sorted() ?: emptyList()) }
+    var tags by remember { mutableStateOf<List<String>>(prefs.getStringSet("custom_tags", emptySet<String>())?.toList()?.sorted() ?: emptyList()) }
     var tagDialog by remember { mutableStateOf(false) }
     var tagName by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf<Set<Long>>(emptySet()) }
@@ -108,7 +108,7 @@ private fun MediaManager() {
             "最近删除" -> media.filter { it.trashed }
             "全部" -> media.filter { !it.trashed }
             else -> {
-                val ids = prefs.getStringSet("tag_$activeTab", emptySet()) ?: emptySet()
+                val ids = prefs.getStringSet("tag_$activeTab", emptySet<String>()) ?: emptySet()
                 media.filter { !it.trashed && it.id.toString() in ids }
             }
         }
@@ -141,7 +141,7 @@ private fun MediaManager() {
                     TextButton(onClick = { selected = emptySet() }) { Text("取消选择", color = Color.LightGray) }
                     TextButton(onClick = {
                         if (activeTab !in listOf("全部", "图片", "视频", "最近删除")) {
-                            val old = prefs.getStringSet("tag_$activeTab", emptySet())?.toMutableSet() ?: mutableSetOf()
+                            val old = prefs.getStringSet("tag_$activeTab", emptySet<String>())?.toMutableSet() ?: mutableSetOf()
                             old.addAll(selected.map { it.toString() }); prefs.edit().putStringSet("tag_$activeTab", old).apply()
                         }
                         selected = emptySet()
