@@ -4,15 +4,15 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 android {
-    namespace = "com.nkj97721.chmee.v20261108213748"
+    namespace = "com.nkj97721.chmee.v20261108214040"
     compileSdk = 35
     defaultConfig {
         ndk { abiFilters += "arm64-v8a" }
-        applicationId = "com.nkj97721.chmee.v20261108213748"
+        applicationId = "com.nkj97721.chmee.v20261108214040"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2026110823
-        versionName = "20261108.213748"
+        versionCode = 2026110824
+        versionName = "20261108.214040"
     }
     buildTypes { release { isMinifyEnabled = false } }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
