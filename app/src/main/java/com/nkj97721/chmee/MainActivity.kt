@@ -1,4 +1,4 @@
-package com.nkj97721.chmee.v20261108213346
+package com.nkj97721.chmee.v20261108213748
 
 import android.Manifest
 import android.content.ContentUris
@@ -19,6 +19,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -74,8 +75,8 @@ private fun MediaManager() {
     var tags by remember { mutableStateOf(prefs.getStringSet("custom_tags", setOf())?.toList()?.sorted() ?: emptyList()) }
     var tagDialog by remember { mutableStateOf(false) }
     var tagName by remember { mutableStateOf("") }
-    var selected by remember { mutableStateOf(setOf<Long>()) }
-    var columns by remember { mutableFloatStateOf(4f) }
+    var selected by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var columns by remember { mutableStateOf(4f) }
     var newestFirst by remember { mutableStateOf(true) }
     var largeFirst by remember { mutableStateOf(false) }
     var sortBySize by remember { mutableStateOf(false) }
