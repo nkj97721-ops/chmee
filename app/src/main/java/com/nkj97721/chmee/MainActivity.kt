@@ -78,6 +78,7 @@ private fun MediaManager() {
     var columns by remember { mutableFloatStateOf(4f) }
     var newestFirst by remember { mutableStateOf(true) }
     var largeFirst by remember { mutableStateOf(false) }
+    var sortBySize by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
 
     val permissions = remember {
@@ -99,7 +100,7 @@ private fun MediaManager() {
         loading = false
     }
 
-    val visible = remember(media, activeTab, tags, newestFirst, largeFirst, prefs) {
+    val visible = remember(media, activeTab, tags, newestFirst, largeFirst, sortBySize, prefs) {
         val filtered = when (activeTab) {
             "图片" -> media.filter { it.mime.startsWith("image/") && !it.trashed }
             "视频" -> media.filter { it.mime.startsWith("video/") && !it.trashed }
@@ -110,13 +111,11 @@ private fun MediaManager() {
                 media.filter { !it.trashed && it.id.toString() in ids }
             }
         }
-        filtered.sortedWith(if (largeFirst) compareByDescending<MediaItem> { it.size } else compareBy<MediaItem> { it.size }
-            .let { sizeComparator -> if (activeTab == "大小") sizeComparator else sizeComparator }
-        ).let { sorted ->
-            if (activeTab == "全部" || activeTab == "图片" || activeTab == "视频" || activeTab == "最近删除" || tags.contains(activeTab)) {
-                if (largeFirst) sorted else sorted
-            } else sorted
-        }.sortedBy { if (newestFirst) -it.date else it.date }
+        if (sortBySize) {
+            if (largeFirst) filtered.sortedByDescending { it.size } else filtered.sortedBy { it.size }
+        } else {
+            if (newestFirst) filtered.sortedByDescending { it.date } else filtered.sortedBy { it.date }
+        }
     }
 
     MaterialTheme(colorScheme = darkColorScheme(background = Color.Black, surface = Color(0xFF111111), primary = Color.White, onBackground = Color.White, onSurface = Color.White)) {
@@ -124,8 +123,8 @@ private fun MediaManager() {
             Spacer(Modifier.fillMaxWidth().height(42.dp))
             Row(Modifier.fillMaxWidth().height(48.dp).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 HeaderButton("刷新", Modifier.weight(1f), onClick = { refreshKey++ }) { Icon(Icons.Default.Refresh, null, Modifier.size(16.dp)) }
-                HeaderButton(if (newestFirst) "新→旧" else "旧→新", Modifier.weight(1f), onClick = { newestFirst = !newestFirst })
-                HeaderButton(if (largeFirst) "大→小" else "小→大", Modifier.weight(1f), onClick = { largeFirst = !largeFirst })
+                HeaderButton(if (newestFirst) "新→旧" else "旧→新", Modifier.weight(1f), onClick = { newestFirst = !newestFirst; sortBySize = false })
+                HeaderButton(if (largeFirst) "大→小" else "小→大", Modifier.weight(1f), onClick = { largeFirst = !largeFirst; sortBySize = true })
             }
             Row(Modifier.fillMaxWidth().height(48.dp), verticalAlignment = Alignment.CenterVertically) {
                 androidx.compose.foundation.lazy.LazyRow(Modifier.weight(1f), contentPadding = PaddingValues(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -267,7 +266,13 @@ private fun loadMedia(context: android.content.Context): List<MediaItem> {
     val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE}=? OR ${MediaStore.Files.FileColumns.MEDIA_TYPE}=?"
     val args = arrayOf(MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(), MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString())
     val result = mutableListOf<MediaItem>()
-    resolver.query(collection, projection, selection, args, "${MediaStore.MediaColumns.DATE_ADDED} DESC")?.use { cursor ->
+    val queryArgs = Bundle().apply {
+        putString(android.content.ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
+        putStringArray(android.content.ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, args)
+        putString(android.content.ContentResolver.QUERY_ARG_SQL_SORT_ORDER, "${MediaStore.MediaColumns.DATE_ADDED} DESC")
+        if (Build.VERSION.SDK_INT >= 30) putInt(MediaStore.QUERY_ARG_MATCH_TRASHED, MediaStore.MATCH_INCLUDE)
+    }
+    resolver.query(collection, projection, queryArgs, null)?.use { cursor ->
         val idCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
         val typeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
         val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns.MIME_TYPE)
